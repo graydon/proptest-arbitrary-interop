@@ -170,9 +170,23 @@ impl<A: ArbInterop> proptest::strategy::Strategy for ArbStrategy<A> {
     type Value = A;
 
     fn new_tree(&self, runner: &mut TestRunner) -> proptest::strategy::NewTree<Self> {
-        let mut bytes = std::iter::repeat(0u8).take(self.size).collect::<Vec<u8>>();
-        runner.rng().fill_bytes(&mut bytes);
-        ArbValueTree::new(bytes).map_err(|_| "initial arbitrary call failed".into())
+        loop {
+            let mut bytes = std::iter::repeat(0u8).take(self.size).collect::<Vec<u8>>();
+            runner.rng().fill_bytes(&mut bytes);
+            match ArbValueTree::new(bytes) {
+                Ok(v) => {
+                    return Ok(v);
+                }
+                Err(e @ arbitrary::Error::IncorrectFormat) => {
+                    // The Arbitrary impl couldn't construct a value
+                    // from the given bytes. Try again.
+                    runner.reject_local(format!("{e}"))?;
+                }
+                Err(e) => {
+                    return Err(format!("{e}").into());
+                }
+            }
+        }
     }
 }
 
