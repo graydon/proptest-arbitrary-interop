@@ -76,7 +76,7 @@ use arbitrary;
 use proptest;
 
 use core::fmt::Debug;
-use proptest::prelude::RngCore;
+use proptest::prelude::Rng as _;
 use proptest::test_runner::TestRunner;
 use std::marker::PhantomData;
 
